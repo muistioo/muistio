@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K-Pro - Hallintapaneeli</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- SortableJS kirjasto raahausta varten -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+    <header class="top-bar">
+        <h1 class="logo-text">K-Pro</h1>
+        <div class="top-bar-controls">
+            <button id="theme-toggle" class="theme-toggle-btn" title="Vaihda teemaa">
+                <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+                <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+            </button>
+            <a href="/logout" class="logout-btn">Kirjaudu ulos</a>
+        </div>
+    </header>
+
+    <main>
+        <section class="controls-section">
+            <div class="header-main">
+                <h2 class="section-title">Asiakasmuistiot</h2>
+                <div class="company-controls">
+                    <select id="companySelector"></select>
+                    <button class="btn-secondary" onclick="app.deleteCompany()" title="Poista valittu yritys">Poista yritys</button>
+                    <button class="btn-secondary" onclick="app.exportCompanyTasks()" title="Vie kaikki yrityksen tehtävät kalenteriin">📅 Vie kalenteriin (.ics)</button>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-box">Avoimet <span id="statOpen" class="stat-num">0</span></div>
+                <div class="stat-box">Kriittiset <span id="statUrgent" class="stat-num">0</span></div>
+                <div class="stat-box search-box">
+                    <input type="text" id="searchBox" placeholder="Hae tekstillä...">
+                </div>
+            </div>
+
+            <div class="filter-bar">
+                <select id="prioFilter">
+                    <option value="all">Kaikki tärkeydet</option>
+                    <option value="high">Korkea</option>
+                    <option value="medium">Keskitaso</option>
+                    <option value="low">Matala</option>
+                </select>
+                <select id="sortOrder">
+                    <option value="manual">Käsin järjestetty</option>
+                    <option value="newest">Uusin ensin</option>
+                    <option value="oldest">Vanhin ensin</option>
+                    <option value="due_asc">Eräpäivä</option>
+                    <option value="prio_desc">Tärkeysaste</option>
+                </select>
+                <button id="drag-lock-btn" class="drag-lock-btn locked" title="Vaihda järjestelyn lukitusta">
+                     <svg class="lock-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                     <svg class="unlock-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+                </button>
+            </div>
+        </section>
+
+        <section class="input-section">
+            <div class="input-row">
+                <input type="text" id="taskIn" placeholder="Uusi tehtävä...">
+                <select id="prioIn">
+                    <option value="medium">Keskitaso</option>
+                    <option value="high">Korkea</option>
+                    <option value="low">Matala</option>
+                </select>
+            </div>
+            <div class="input-row">
+                <input type="datetime-local" id="dateIn" title="Eräpäivä">
+                <button class="btn-primary" onclick="app.addTask()">Lisää merkintä</button>
+            </div>
+        </section>
+
+        <ul id="taskList" class="task-list"></ul>
+    </main>
+</div>
+
+<!-- Modal-ikkunat -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <h3 class="modal-title">Muokkaa tietoja</h3>
+        <div class="field"><label>Tehtävä</label><input type="text" id="editContent"></div>
+        <div class="field"><label>Prioriteetti</label><select id="editPrio"><option value="low">Matala</option><option value="medium">Keskitaso</option><option value="high">Korkea</option></select></div>
+        <div class="field"><label>Vaihda yritystä</label><select id="editCompany"></select></div>
+        <div class="field"><label>Eräpäivä</label><input type="datetime-local" id="editDate"></div>
+        <div class="field"><label>Käytetty aika (minuutteina)</label><input type="number" id="editTimeSpentMinutes" min="0"></div>
+        <div class="modal-actions">
+            <button class="btn-primary" onclick="app.submitEdit()">Tallenna</button>
+            <button class="btn-secondary" onclick="app.ui.closeModals()">Peruuta</button>
+        </div>
+    </div>
+</div>
+
+<div id="companyModal" class="modal">
+    <div class="modal-content">
+        <h3 class="modal-title">Lisää uusi yritys</h3>
+        <div class="field">
+            <input type="text" id="newCompIn" placeholder="Yrityksen nimi...">
+        </div>
+        <div class="modal-actions">
+            <button class="btn-primary" onclick="app.submitCompany()">Luo yrityskansio</button>
+            <button class="btn-secondary" onclick="app.ui.closeModals()">Peruuta</button>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K-Pro | Kirjaudu sisään</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="login-page">
+    <div class="login-card">
+        <h2>K-Pro</h2>
+        <p class="login-subtitle">Pääsy suojattu</p>
+        
+        <div class="pw-container">
+            <input type="password" id="passwordInput" placeholder="Anna salasana..." onkeypress="handleKeypress(event)">
+            <button id="togglePasswordBtn" class="password-toggle" title="Näytä salasana">
+                <!-- SVG-kuvake emojin sijaan -->
+                <svg id="eyeIconOpen" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg id="eyeIconClosed" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24M1.05 1.05 23 23m-4.24-4.24A10.117 10.117 0 0 1 12 20c-7 0-10-7-10-7a10.278 10.278 0 0 1 4.18-5.02"/></svg>
+            </button>
+        </div>
+        
+        <button class="btn-primary" onclick="doLogin()">Kirjaudu sisään</button>
+        <p id="errorMessage" class="error-message">Väärä salasana!</p>
+    </div>
+
+    <script>
+        const passwordInput = document.getElementById('passwordInput');
+        const togglePasswordBtn = document.getElementById('togglePasswordBtn');
+        const eyeIconOpen = document.getElementById('eyeIconOpen');
+        const eyeIconClosed = document.getElementById('eyeIconClosed');
+        const errorMessage = document.getElementById('errorMessage');
+
+        togglePasswordBtn.addEventListener('click', () => {
+            const isPassword = passwordInput.type === 'password';
+            passwordInput.type = isPassword ? 'text' : 'password';
+            eyeIconOpen.style.display = isPassword ? 'none' : 'block';
+            eyeIconClosed.style.display = isPassword ? 'block' : 'none';
+        });
+
+        async function doLogin() {
+            errorMessage.style.display = 'none';
+            const response = await fetch('/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({password: passwordInput.value})
+            });
+            
+            if(response.ok) {
+                window.location.href = '/'; // Ohjataan etusivulle onnistuessa
+            } else {
+                errorMessage.style.display = 'block';
+            }
+        }
+
+        function handleKeypress(event) {
+            if (event.key === 'Enter') {
+                doLogin();
+            }
+        }
+    </script>
+</body>
+</html>
